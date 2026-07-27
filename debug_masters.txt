@@ -1,0 +1,367 @@
+     1	import React, { useState } from 'react';
+     2	import { useApp } from '../context/AppContext';
+     3	import { Warehouse, Department } from '../types';
+     4	import { Plus, MapPin, Building, Store, X, FolderTree, Users, Factory, Pencil, Trash2, Package } from 'lucide-react';
+     5	import { CSVUploader } from '../components/CSVUploader';
+     6	
+     7	export default function Masters() {
+     8	    const { users, addUser, updateUser, items, addItem, warehouses, departments, addWarehouse, updateWarehouse, deleteWarehouse, addDepartment, updateDepartment, deleteDepartment, stock } = useApp();
+     9	  const [isModalOpen, setIsModalOpen] = useState(false);
+    10	    const [modalType, setModalType] = useState<'warehouse' | 'department' | 'company' | 'user' | 'item'>('warehouse');
+    11	    const [activeTab, setActiveTab] = useState<'departments' | 'warehouses' | 'companies' | 'users' | 'items'>('departments');
+    12	  const [editItem, setEditItem] = useState<any>(null);
+    13	  const handleBulkUpload = async (data: any[]) => {
+    14	    for (const row of data) {
+    15	      if (activeTab === 'departments') {
+    16	        await addDepartment({ name: row.name || '', head: row.head || '', plantId: row.plantId || 'Plant-1' });
+    17	      } else if (activeTab === 'warehouses') {
+    18	        await addWarehouse({ name: row.name || '', type: row.type || 'Warehouse' });
+    19	      } else if (activeTab === 'items') {
+    20	        await addItem({ 
+    21	          name: row.name || '', 
+    22	          sku: row.sku || '', 
+    23	          categoryId: row.categoryId || 'Cat-1', 
+    24	          uom: row.uom || 'Kgs', 
+    25	          reorderLevel: Number(row.reorderLevel) || 10, 
+    26	          type: row.type || 'Raw Material' 
+    27	        });
+    28	      }
+    29	    }
+    30	    alert('Bulk upload completed');
+    31	  };
+    32	
+    33	  return (
+    34	    <div className="space-y-6">
+    35	      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    36	        <h1 className="text-2xl font-bold">Master Configurations</h1>
+    37	                {(activeTab === 'warehouses' || activeTab === 'departments' || activeTab === 'companies' || activeTab === 'users' || activeTab === 'items') && (
+    38	          <div className="flex gap-2">
+    39	            <CSVUploader onUpload={handleBulkUpload} />
+    40	          <button 
+    41	            onClick={() => { 
+    42	              setEditItem(null);
+    43	              if (activeTab === 'warehouses') setModalType('warehouse');
+    44	              else if (activeTab === 'departments') setModalType('department');
+    45	              else if (activeTab === 'companies') setModalType('company');
+    46	                            else if (activeTab === 'users') setModalType('user');
+    47	              else if (activeTab === 'items') setModalType('item');
+    48	              setIsModalOpen(true); 
+    49	            }}
+    50	            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+    51	          >
+    52	            <Plus className="w-5 h-5" /> Add {activeTab === 'warehouses' ? 'Warehouse' : activeTab === 'departments' ? 'Department' : activeTab === 'companies' ? 'Company' : activeTab === 'items' ? 'Item' : 'User'}
+    53	          </button>
+    54	          </div>
+    55	        )}
+    56	      </div>
+    57	
+    58	      <div className="flex border-b border-gray-200 dark:border-zinc-800">
+    59	        <button
+    60	          onClick={() => setActiveTab('departments')}
+    61	          className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-colors border-b-2 ${activeTab === 'departments' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+    62	        >
+    63	          <FolderTree className="w-4 h-4" /> Departments
+    64	        </button>
+    65	        <button
+    66	          onClick={() => setActiveTab('warehouses')}
+    67	          className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-colors border-b-2 ${activeTab === 'warehouses' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+    68	        >
+    69	          <Building className="w-4 h-4" /> Warehouses
+    70	        </button>
+    71	        <button
+    72	          onClick={() => setActiveTab('companies')}
+    73	          className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-colors border-b-2 ${activeTab === 'companies' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+    74	        >
+    75	          <Users className="w-4 h-4" /> Users
+    76	        </button>
+    77	        
+    78	              <button
+    79	          onClick={() => setActiveTab('items')}
+    80	          className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-colors border-b-2 ${activeTab === 'items' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+    81	        >
+    82	          <Package className="w-4 h-4" /> Items
+    83	        </button>
+    84	      </div>
+    85	      {activeTab === 'warehouses' && (
+    86	        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    87	          {warehouses.map(wh => {
+    88	            const whStock = stock.filter(i => i.warehouseId === wh.id);
+    89	            const totalItems = new Set(whStock.map(i => i.itemId)).size;
+    90	            const totalQuantity = whStock.reduce((sum, i) => sum + i.quantity, 0);
+    91	            
+    92	            const Icon = wh.type.toLowerCase() === 'store' ? Store : Building;
+    93	
+    94	            return (
+    95	              <div key={wh.id} className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 p-6 flex flex-col h-full group">
+    96	                <div className="flex items-start justify-between mb-4">
+    97	                  <div className="flex items-center gap-3">
+    98	                    <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg">
+    99	                      <Icon className="w-6 h-6" />
+   100	                    </div>
+   101	                    <div>
+   102	                      <h3 className="font-bold text-lg">{wh.name}</h3>
+   103	                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-zinc-800 dark:text-gray-300">
+   104	                        {wh.type}
+   105	                      </span>
+   106	                    </div>
+   107	                  </div>
+   108	                  <div className="flex gap-1 opacity-100 transition-opacity">
+   109	                    <button 
+   110	                      onClick={() => { setEditItem(wh); setModalType('warehouse'); setIsModalOpen(true); }}
+   111	                      className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+   112	                      title="Edit Warehouse"
+   113	                    >
+   114	                      <Pencil className="w-4 h-4" />
+   115	                    </button>
+   116	                    <button 
+   117	                      onClick={() => { if(window.confirm('Delete this warehouse?')) deleteWarehouse(wh.id); }}
+   118	                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+   119	                      title="Delete Warehouse"
+   120	                    >
+   121	                      <Trash2 className="w-4 h-4" />
+   122	                    </button>
+   123	                  </div>
+   124	                </div>
+   125	
+   126	                <div className="grid grid-cols-2 gap-4 border-t border-gray-100 dark:border-zinc-800 pt-4 mt-auto">
+   127	                  <div>
+   128	                    <div className="text-xs text-gray-500">Unique Items</div>
+   129	                    <div className="font-bold text-lg">{totalItems}</div>
+   130	                  </div>
+   131	                  <div>
+   132	                    <div className="text-xs text-gray-500">Total Stock</div>
+   133	                    <div className="font-bold text-lg">{totalQuantity}</div>
+   134	                  </div>
+   135	                </div>
+   136	              </div>
+   137	            );
+   138	          })}
+   139	        </div>
+   140	      )}
+   141	
+   142	      {activeTab === 'departments' && (
+   143	        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+   144	          {departments.map(dept => (
+   145	            <div key={dept.id} className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 p-6 flex items-center justify-between gap-4 group">
+   146	              <div className="flex items-center gap-4">
+   147	                <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-lg">
+   148	                  <FolderTree className="w-6 h-6" />
+   149	                </div>
+   150	                <div>
+   151	                  <h3 className="font-bold text-lg">{dept.name}</h3>
+   152	                  <p className="text-sm text-gray-500 dark:text-gray-400">Head: {dept.head}</p>
+   153	                </div>
+   154	              </div>
+   155	              <div className="flex gap-1 opacity-100 transition-opacity">
+   156	                <button 
+   157	                  onClick={() => { setEditItem(dept); setModalType('department'); setIsModalOpen(true); }}
+   158	                  className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+   159	                  title="Edit Department"
+   160	                >
+   161	                  <Pencil className="w-4 h-4" />
+   162	                </button>
+   163	                <button 
+   164	                  onClick={() => { if(window.confirm('Delete this department?')) deleteDepartment(dept.id); }}
+   165	                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+   166	                  title="Delete Department"
+   167	                >
+   168	                  <Trash2 className="w-4 h-4" />
+   169	                </button>
+   170	              </div>
+   171	            </div>
+   172	          ))}
+   173	          {departments.length === 0 && (
+   174	             <div className="col-span-full py-8 text-center text-gray-500 bg-white dark:bg-zinc-900 rounded-xl border border-dashed border-gray-200 dark:border-zinc-800">
+   175	             No departments configured.
+   176	           </div>
+   177	          )}
+   178	        </div>
+   179	      )}
+   180	
+   181	      {activeTab === 'companies' && (
+   182	        <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden">
+   183	          <div className="p-6 border-b border-gray-100 dark:border-zinc-800 flex justify-between items-center">
+   184	            <h2 className="font-bold text-lg">Users</h2>
+   185	            <button 
+   186	              onClick={() => { setModalType('company'); setIsModalOpen(true); }}
+   187	              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm"
+   188	            >
+   189	              <Plus className="w-4 h-4" /> Add User
+   190	            </button>
+   191	          </div>
+   192	          <table className="w-full text-left">
+   193	            <thead className="bg-gray-50 dark:bg-zinc-800/50 border-b border-gray-200 dark:border-zinc-800 text-sm text-gray-500">
+   194	              <tr>
+   195	                <th className="p-4">Name</th>
+   196	                <th className="p-4">Email</th>
+   197	                <th className="p-4">Role</th>
+   198	                <th className="p-4">Status</th>
+   199	              </tr>
+   200	            </thead>
+   201	            <tbody>
+   202	              {(users && users.length > 0 ? users : [{ id: '1', name: 'Admin User', email: 'admin@yashoda.com', role: 'Administrator', status: 'Active' }]).map(u => (
+   203	                <tr key={u.id}>
+   204	                  <td className="p-4 font-medium flex items-center gap-3">
+   205	                    <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600">
+   206	                      {u.name ? u.name[0].toUpperCase() : 'U'}
+   207	                    </div>
+   208	                    {u.name}
+   209	                  </td>
+   210	                  <td className="p-4 text-gray-500">{u.email}</td>
+   211	                  <td className="p-4">{u.role}</td>
+   212	                  <td className="p-4">
+   213	                    <span className={`${u.status === 'Active' ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : 'text-red-600 bg-red-50 dark:bg-red-900/20'} px-2 py-1 rounded-full text-xs font-medium`}>
+   214	                      {u.status}
+   215	                    </span>
+   216	                  </td>
+   217	                </tr>
+   218	              ))}
+   219	            </tbody>
+   220	                    </table>
+   221	        </div>
+   222	      )}
+   223	
+   224	      {activeTab === 'items' && (
+   225	        <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden">
+   226	          <table className="w-full text-left">
+   227	            <thead className="bg-gray-50 dark:bg-zinc-800/50 border-b border-gray-200 dark:border-zinc-800 text-sm text-gray-500">
+   228	              <tr>
+   229	                <th className="p-4">SKU</th>
+   230	                <th className="p-4">Name</th>
+   231	                <th className="p-4">UOM</th>
+   232	                <th className="p-4">Actions</th>
+   233	              </tr>
+   234	            </thead>
+   235	            <tbody>
+   236	              {items.map(item => (
+   237	                <tr key={item.id} className="border-b border-gray-100 dark:border-zinc-800 last:border-0">
+   238	                  <td className="p-4">{item.sku}</td>
+   239	                  <td className="p-4 font-medium">{item.name}</td>
+   240	                  <td className="p-4">{item.uom}</td>
+   241	                  <td className="p-4">
+   242	                    <button onClick={() => {}} className="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
+   243	                  </td>
+   244	                </tr>
+   245	              ))}
+   246	            </tbody>
+   247	          </table>
+   248	        </div>
+   249	      )}
+   250	
+   251	      </div>
+   252	    </div>
+   253	  );
+   254	}
+   255	
+   256	function MasterModal({ type, onClose, onSave, initialData }: { type: string, onClose: () => void, onSave: (data: any) => void, initialData?: any }) {
+   257	  const [formData, setFormData] = useState(
+   258	    initialData || (
+   259	    type === 'warehouse' ? { name: '', type: 'Warehouse' } :
+   260	    type === 'department' ? { name: '', head: '', plantId: 'Plant-1' } :
+   261	    type === 'company' ? { name: '', type: 'Company', location: '' } :
+   262	    { name: '', email: '', role: 'User', status: 'Active', password: '' }
+   263	    )
+   264	  );
+   265	
+   266	  return (
+   267	    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+   268	      <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl w-full max-w-md">
+   269	        <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-zinc-800">
+   270	          <h2 className="text-lg font-bold">
+   271	            {initialData ? `Edit ${type === 'warehouse' ? 'Warehouse' : type === 'department' ? 'Department' : type === 'company' ? 'Company' : 'User'}` :
+   272	            type === 'warehouse' ? 'New Warehouse' : 
+   273	             type === 'department' ? 'New Department' : 
+   274	             type === 'company' ? 'New Company/Plant' : type === 'item' ? 'New Item' : 'New User'}
+   275	          </h2>
+   276	          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full"><X className="w-5 h-5" /></button>
+   277	        </div>
+   278	        <div className="p-6 space-y-4">
+   279	          <div>
+   280	            <label className="block text-sm font-medium mb-1">Name</label>
+   281	            <input type="text" value={(formData as any).name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-2 border border-gray-200 dark:border-zinc-700 rounded-lg bg-gray-50 dark:bg-zinc-800 outline-none" required />
+   282	          </div>
+   283	          {type === 'warehouse' && (
+   284	            <div>
+   285	              <label className="block text-sm font-medium mb-1">Type</label>
+   286	              <select value={(formData as any).type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full p-2 border border-gray-200 dark:border-zinc-700 rounded-lg bg-gray-50 dark:bg-zinc-800 outline-none">
+   287	                <option value="Warehouse">Warehouse</option>
+   288	                <option value="Store">Store</option>
+   289	              </select>
+   290	            </div>
+   291	          )}
+   292	          {type === 'department' && (
+   293	            <div>
+   294	              <label className="block text-sm font-medium mb-1">Department Head</label>
+   295	              <input type="text" value={(formData as any).head} onChange={e => setFormData({...formData, head: e.target.value})} className="w-full p-2 border border-gray-200 dark:border-zinc-700 rounded-lg bg-gray-50 dark:bg-zinc-800 outline-none" required />
+   296	            </div>
+   297	          )}
+   298	          {type === 'company' && (
+   299	            <>
+   300	              <div>
+   301	                <label className="block text-sm font-medium mb-1">Type</label>
+   302	                <select value={(formData as any).type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full p-2 border border-gray-200 dark:border-zinc-700 rounded-lg bg-gray-50 dark:bg-zinc-800 outline-none">
+   303	                  <option value="Company">Company</option>
+   304	                  <option value="Plant">Plant</option>
+   305	                </select>
+   306	              </div>
+   307	              <div>
+   308	                <label className="block text-sm font-medium mb-1">Location / Address</label>
+   309	                <input type="text" value={(formData as any).location} onChange={e => setFormData({...formData, location: e.target.value})} className="w-full p-2 border border-gray-200 dark:border-zinc-700 rounded-lg bg-gray-50 dark:bg-zinc-800 outline-none" />
+   310	              </div>
+   311	            </>
+   312	          )}
+   313	                    {type === 'item' && (
+   314	            <>
+   315	              <div>
+   316	                <label className="block text-sm font-medium mb-1">SKU</label>
+   317	                <input type="text" value={(formData as any).sku} onChange={e => setFormData({...formData, sku: e.target.value})} className="w-full p-2 border border-gray-200 dark:border-zinc-700 rounded-lg bg-gray-50 dark:bg-zinc-800 outline-none" required />
+   318	              </div>
+   319	              <div>
+   320	                <label className="block text-sm font-medium mb-1">Unit of Measure (UoM)</label>
+   321	                <input type="text" value={(formData as any).uom} onChange={e => setFormData({...formData, uom: e.target.value})} className="w-full p-2 border border-gray-200 dark:border-zinc-700 rounded-lg bg-gray-50 dark:bg-zinc-800 outline-none" required />
+   322	              </div>
+   323	              <div>
+   324	                <label className="block text-sm font-medium mb-1">Type</label>
+   325	                <select value={(formData as any).type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full p-2 border border-gray-200 dark:border-zinc-700 rounded-lg bg-gray-50 dark:bg-zinc-800 outline-none">
+   326	                  <option value="Raw Material">Raw Material</option>
+   327	                  <option value="Consumable">Consumable</option>
+   328	                  <option value="Spare Part">Spare Part</option>
+   329	                </select>
+   330	              </div>
+   331	              <div>
+   332	                <label className="block text-sm font-medium mb-1">Reorder Level</label>
+   333	                <input type="number" value={(formData as any).reorderLevel} onChange={e => setFormData({...formData, reorderLevel: Number(e.target.value)})} className="w-full p-2 border border-gray-200 dark:border-zinc-700 rounded-lg bg-gray-50 dark:bg-zinc-800 outline-none" required />
+   334	              </div>
+   335	            </>
+   336	          )}
+   337	          {type === 'user' && (
+   338	            <>
+   339	              <div>
+   340	                <label className="block text-sm font-medium mb-1">Email</label>
+   341	                <input type="email" value={(formData as any).email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-2 border border-gray-200 dark:border-zinc-700 rounded-lg bg-gray-50 dark:bg-zinc-800 outline-none" required />
+   342	              </div>
+   343	              {!initialData && (
+   344	                <div>
+   345	                  <label className="block text-sm font-medium mb-1">Password</label>
+   346	                  <input type="password" value={(formData as any).password} onChange={e => setFormData({...formData, password: e.target.value})} className="w-full p-2 border border-gray-200 dark:border-zinc-700 rounded-lg bg-gray-50 dark:bg-zinc-800 outline-none" required />
+   347	                </div>
+   348	              )}
+   349	              <div>
+   350	                <label className="block text-sm font-medium mb-1">Role</label>
+   351	                <select value={(formData as any).role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full p-2 border border-gray-200 dark:border-zinc-700 rounded-lg bg-gray-50 dark:bg-zinc-800 outline-none">
+   352	                  <option value="Administrator">Administrator</option>
+   353	                  <option value="Manager">Manager</option>
+   354	                  <option value="User">User</option>
+   355	                </select>
+   356	              </div>
+   357	            </>
+   358	          )}
+   359	        </div>
+   360	        <div className="p-6 border-t border-gray-100 dark:border-zinc-800 flex justify-end gap-3">
+   361	          <button onClick={onClose} className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg font-medium transition-colors">Cancel</button>
+   362	          <button onClick={() => onSave(formData)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors">Save</button>
+   363	        </div>
+   364	      </div>
+   365	    </div>
+   366	  );
+   367	}

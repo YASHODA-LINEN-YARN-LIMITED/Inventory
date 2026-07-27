@@ -1,0 +1,10 @@
+{
+  "name": "Remix YASHODA LINEN",
+  "description": "Professional multi-location inventory management system with Google Sheets backend, offline syncing, barcode scanning, and analytics.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "entities": {
+    "gateEntry": {
+      "title": "Gate Entry",
+      "description": "Represents a gate entry record",
+      "type": "object",
+      "properties": {
+        "companyType": { "type": "string" },
+        "slNo": { "type": "string" },
+        "date": { "type": "string" },
+        "vehicleNo": { "type": "string" },
+        "partyName": { "type": "string" },
+        "materialDescription": { "type": "string" },
+        "quantityWeight": { "type": "string" },
+        "unit": { "type": "string" },
+        "invoiceNoValue": { "type": "string" },
+        "inTime": { "type": "string" },
+        "outTime": { "type": "string" },
+        "driverLicenceNo": { "type": "string" },
+        "contactNoSign": { "type": "string" },
+        "securitySign": { "type": "string" }
+      },
+      "required": ["slNo"]
+    },
+    "department": {
+      "title": "Department",
+      "description": "Represents a department",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "head": { "type": "string" },
+        "plantId": { "type": "string" }
+      },
+      "required": ["name", "head"]
+    },
+    "warehouse": {
+      "title": "Warehouse",
+      "description": "Represents a warehouse",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string" }
+      },
+      "required": ["name", "type"]
+    },
+    "item": {
+      "title": "Item Master",
+      "description": "Represents an Item Master record in catalog",
+      "type": "object",
+      "properties": {
+        "itemCode": { "type": "string" },
+        "itemName": { "type": "string" },
+        "itemCategory": { "type": "string" },
+        "itemType": { "type": "string" },
+        "uom": { "type": "string" },
+        "warehouse": { "type": "string" },
+        "batchTracking": { "type": "string" },
+        "serialTracking": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["itemCode", "itemName"]
+    },
+    "supplier": {
+      "title": "Supplier",
+      "description": "Represents a supplier",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "contactName": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" }
+      },
+      "required": ["name"]
+    }
+  },
+  "firestore": {
+    "GateEntries_Yashoda": {
+      "schema": { "$ref": "#/entities/gateEntry" },
+      "description": "Collection of Yashoda gate entries."
+    },
+    "GateEntries_AIPL": {
+      "schema": { "$ref": "#/entities/gateEntry" },
+      "description": "Collection of Contractor AIPL gate entries."
+    },
+    "gateEntriesYashoda": {
+      "schema": { "$ref": "#/entities/gateEntry" },
+      "description": "Collection of Yashoda gate entries."
+    },
+    "gateEntriesAIPL": {
+      "schema": { "$ref": "#/entities/gateEntry" },
+      "description": "Collection of Contractor AIPL gate entries."
+    },
+    "departments": {
+      "schema": { "$ref": "#/entities/department" },
+      "description": "Collection of all departments."
+    },
+    "warehouses": {
+      "schema": { "$ref": "#/entities/warehouse" },
+      "description": "Collection of all warehouses."
+    },
+    "items": {
+      "schema": { "$ref": "#/entities/item" },
+      "description": "Collection of all items."
+    },
+    "suppliers": {
+      "schema": { "$ref": "#/entities/supplier" },
+      "description": "Collection of all suppliers."
+    }
+  }
+}

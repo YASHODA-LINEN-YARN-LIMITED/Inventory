@@ -1,0 +1,11 @@
+const fs = require('fs');
+let code = fs.readFileSync('src/pages/GateRegister.tsx', 'utf8');
+code = code.replace(/const loadSheetData = async[\s\S]*? \/\/ Form State/, '// Form State');
+code = code.replace(/const \[sheetEntries, setSheetEntries\] = useState<Omit<GateEntry, '\''id'\''>\[\]>\(\[\]\);/g, '');
+code = code.replace(/const \[isLoadingSheet, setIsLoadingSheet\] = useState\(false\);/g, '');
+code = code.replace(/const \[needsAuth, setNeedsAuth\] = useState\(true\);/g, '');
+code = code.replace(/const \[isLoggingIn, setIsLoggingIn\] = useState\(false\);/g, '');
+code = code.replace(/const \[user, setUser\] = useState<User \| null>\(null\);/g, '');
+code = code.replace(/const \[sheetUrl, setSheetUrl\] = useState<string \| null>\(null\);/g, '');
+code = code.replace(/const allEntries = \[\.\.\.sheetEntries, \.\.\.gateEntries\.filter\(g => \(g\.companyType === companyType \|\| \(\!g\.companyType && companyType === '\''Yashoda'\''\)\) && \!sheetEntries\.some\(s => s\.slNo === g\.slNo\)\)\]\.reverse\(\);/g, 'const allEntries = gateEntries.filter(g => g.companyType === companyType || (!g.companyType && companyType === \'Yashoda\')).reverse();');
+fs.writeFileSync('src/pages/GateRegister.tsx', code);

@@ -1,0 +1,172 @@
+// Replace this entire file in your Google Apps Script project (Code.gs)
+// VERY IMPORTANT: After updating the code, you MUST create a NEW deployment.
+// 1. Click "Deploy" at the top right
+// 2. Select "New deployment" (DO NOT select "Test deployments" or "Manage deployments" unless creating a new version)
+// 3. Ensure "Execute as: Me" and "Who has access: Anyone" are selected.
+// 4. Click "Deploy" and copy the NEW Web App URL and paste it into your app's settings.
+
+function setupInitialSheets() {
+  var doc = SpreadsheetApp.getActiveSpreadsheet();
+  var sheetsToCreate = [
+    { name: 'Items', headers: ['id', 'name', 'sku', 'description', 'category', 'type', 'uom', 'reorderLevel', 'unitPrice'] },
+    { name: 'Departments', headers: ['id', 'name', 'head', 'location'] },
+    { name: 'Warehouses', headers: ['id', 'name', 'location', 'type'] },
+    { name: 'Suppliers', headers: ['id', 'name', 'contactPerson', 'email', 'phone', 'address', 'gstin'] },
+    { name: 'GateEntries_AIPL', headers: ['slNo', 'date', 'vehicleNo', 'partyName', 'materialDescription', 'quantityWeight', 'inTime', 'outTime', 'invoiceNoValue', 'driverLicenceNo', 'contactNoSign', 'securitySign'] },
+    { name: 'GateEntries_Yashoda', headers: ['slNo', 'date', 'vehicleNo', 'partyName', 'materialDescription', 'quantityWeight', 'inTime', 'outTime', 'invoiceNoValue', 'driverLicenceNo', 'contactNoSign', 'securitySign'] },
+    { name: 'MaterialIssues', headers: ['id', 'issueNo', 'date', 'departmentId', 'requestedBy', 'issuedBy', 'status', 'remarks'] },
+    { name: 'PRs', headers: ['id', 'prNo', 'date', 'departmentId', 'requestedBy', 'expectedDate', 'status', 'remarks'] },
+    { name: 'POs', headers: ['id', 'poNo', 'date', 'supplierId', 'expectedDelivery', 'status', 'totalAmount', 'remarks'] },
+    { name: 'GRNs', headers: ['id', 'grnNo', 'poId', 'gateEntryId', 'date', 'receivedBy', 'inspectedBy', 'status', 'remarks'] },
+    { name: 'StockTransfers', headers: ['id', 'transferNo', 'date', 'fromWarehouseId', 'toWarehouseId', 'requestedBy', 'status', 'remarks'] },
+    { name: 'StockAdjustments', headers: ['id', 'adjustmentNo', 'date', 'warehouseId', 'adjustedBy', 'reason', 'status', 'remarks'] }
+  ];
+
+  sheetsToCreate.forEach(function(s) {
+    var sheet = doc.getSheetByName(s.name);
+    if (!sheet) {
+      sheet = doc.insertSheet(s.name);
+    }
+    // Check if headers exist
+    var lastRow = sheet.getLastRow();
+    if (lastRow === 0) {
+      sheet.appendRow(s.headers);
+      sheet.getRange(1, 1, 1, s.headers.length).setFontWeight("bold");
+    }
+  });
+}
+
+function doPost(e) {
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+      throw new Error("No data received");
+    }
+
+    // Parse the payload correctly handling CORS text/plain fallback
+    var payload = JSON.parse(e.postData.contents);
+    var action = payload.action;
+    var sheetName = payload.sheetName;
+    var data = payload.data;
+    var spreadsheetId = payload.spreadsheetId;
+    
+    var doc;
+    if (spreadsheetId) {
+      doc = SpreadsheetApp.openById(spreadsheetId);
+    } else {
+      doc = SpreadsheetApp.getActiveSpreadsheet();
+    }
+    
+    if (!doc) {
+      throw new Error("Could not find active spreadsheet. Please provide a Spreadsheet ID or link the script to a Google Sheet.");
+    }
+    
+    // Map sheet names
+    var sheetNameMapping = {
+      'items': 'Items',
+      'departments': 'Departments',
+      'warehouses': 'Warehouses',
+      'suppliers': 'Suppliers',
+      'gate_entries_aipl': 'GateEntries_AIPL',
+      'gate_entries_yashoda': 'GateEntries_Yashoda',
+      'material_issues': 'MaterialIssues',
+      'material_issue_items': 'MaterialIssues',
+      'prs': 'PRs',
+      'pos': 'POs',
+      'grns': 'GRNs',
+      'stock_transfers': 'StockTransfers',
+      'stock_adjustments': 'StockAdjustments'
+    };
+    
+    var targetSheetName = sheetNameMapping[sheetName] || sheetName;
+    var sheet = doc.getSheetByName(targetSheetName);
+    
+    if (!sheet) {
+      sheet = doc.insertSheet(targetSheetName);
+    }
+    
+    if (action === 'append') {
+      var inputKeys = Object.keys(data);
+      var rowData = [];
+      var headers = [];
+      
+      var lastRow = sheet.getLastRow();
+      var lastCol = sheet.getLastColumn();
+      
+      // Auto-generate or update headers
+      if (lastRow === 0 || lastCol === 0) {
+        headers = inputKeys;
+        sheet.appendRow(headers);
+        sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
+      } else {
+        headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+        
+        var newHeadersAdded = false;
+        for (var i = 0; i < inputKeys.length; i++) {
+          if (headers.indexOf(inputKeys[i]) === -1) {
+            headers.push(inputKeys[i]);
+            newHeadersAdded = true;
+          }
+        }
+        
+        if (newHeadersAdded) {
+          sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+          sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
+        }
+      }
+      
+      for (var j = 0; j < headers.length; j++) {
+        var key = headers[j];
+        var val = data[key];
+        
+        if (val === null || val === undefined) {
+          rowData.push("");
+        } else if (typeof val === 'object') {
+          rowData.push(JSON.stringify(val));
+        } else {
+          rowData.push(val);
+        }
+      }
+      
+      sheet.appendRow(rowData);
+    } else if (action === 'update' || action === 'delete') {
+      var id = data.id;
+      if (id) {
+        var dataRange = sheet.getDataRange();
+        var values = dataRange.getValues();
+        var headers = values[0];
+        var idIndex = headers.indexOf('id');
+        
+        if (idIndex > -1) {
+          for (var r = 1; r < values.length; r++) {
+            if (values[r][idIndex] === id) {
+              if (action === 'delete') {
+                sheet.deleteRow(r + 1);
+              } else if (action === 'update') {
+                for (var j = 0; j < headers.length; j++) {
+                  var key = headers[j];
+                  if (data[key] !== undefined) {
+                    var val = data[key];
+                    sheet.getRange(r + 1, j + 1).setValue(val === null ? "" : (typeof val === 'object' ? JSON.stringify(val) : val));
+                  }
+                }
+              }
+              break;
+            }
+          }
+        }
+      }
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify({ success: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: error.toString(), trace: error.stack }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  return ContentService.createTextOutput("Yashoda ERP App Script is running.")
+    .setMimeType(ContentService.MimeType.TEXT);
+}
