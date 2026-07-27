@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { Warehouse, Department, Item } from '../types';
 import { Plus, MapPin, Building, Store, X, FolderTree, Users, Pencil, Trash2, Package, Search, Filter, Layers, CheckCircle2, XCircle, Tag, Wand2 } from 'lucide-react';
-import { CSVUploader } from '../components/CSVUploader';
+import { CSVUploader, getRowValue } from '../components/CSVUploader';
 
 export default function Masters() {
   const { 
@@ -80,43 +80,94 @@ export default function Masters() {
     return { total, active, inactive, stockItems };
   }, [activeItemsList]);
 
+  const sampleMastersCsvTemplate = useMemo(() => {
+    if (activeTab === 'departments') {
+      return {
+        filename: 'departments_sample_template.csv',
+        headers: ['Name', 'Head of Department', 'Plant ID'],
+        sampleRows: [
+          ['Spinning Department', 'Mr. Ramesh Patel', 'Plant-1'],
+          ['Weaving Department', 'Mr. Suresh Kumar', 'Plant-2']
+        ]
+      };
+    }
+    if (activeTab === 'warehouses') {
+      return {
+        filename: 'warehouses_sample_template.csv',
+        headers: ['Name', 'Type'],
+        sampleRows: [
+          ['Main Mill Store', 'Central Warehouse'],
+          ['Yarn Godown A', 'Raw Material Storage']
+        ]
+      };
+    }
+    return {
+      filename: 'item_masters_sample_template.csv',
+      headers: ['Item Code', 'Item Name', 'Category', 'Item Type', 'UOM', 'Warehouse', 'Batch Tracking', 'Status'],
+      sampleRows: [
+        ['YASH-1001', 'Cotton Yarn 30s Count', 'Raw Material', 'Stock Item', 'Kg', 'Main Warehouse', 'No', 'Active'],
+        ['YASH-1002', 'Linen Fiber Grade A', 'Raw Material', 'Stock Item', 'Ton', 'Main Warehouse', 'Yes', 'Active']
+      ]
+    };
+  }, [activeTab]);
+
   const handleBulkUpload = async (data: any[]) => {
     let successCount = 0;
+    let skippedCount = 0;
+
     for (const row of data) {
+      if (!row) continue;
+
       if (activeTab === 'items') {
-        const itemCode = row.itemCode || row.code || row.sku || ('YASH-' + Math.floor(1000 + Math.random() * 9000));
-        const itemName = row.itemName || row.name || '';
+        const itemCode = getRowValue(row, ['itemCode', 'code', 'sku', 'partno', 'itemnumber'], 'YASH-' + Math.floor(1000 + Math.random() * 9000));
+        const itemName = getRowValue(row, ['itemName', 'name', 'item', 'description', 'particulars', 'material', 'product', 'goods']);
+        
         if (itemName) {
           await addItem({
             itemCode,
             sku: itemCode,
             itemName,
             name: itemName,
-            itemCategory: row.itemCategory || row.category || 'Raw Material',
-            category: row.itemCategory || row.category || 'Raw Material',
-            itemType: row.itemType || row.type || 'Stock Item',
-            type: row.itemType || row.type || 'Stock Item',
-            uom: row.uom || row.unit || 'Kg',
-            warehouse: row.warehouse || (warehouses[0]?.name || 'Main Warehouse'),
-            batchTracking: row.batchTracking === 'Yes' || row.batchTracking === true ? 'Yes' : 'No',
-            serialTracking: row.serialTracking === 'Yes' || row.serialTracking === true ? 'Yes' : 'No',
-            status: row.status || 'Active'
+            itemCategory: getRowValue(row, ['itemCategory', 'category', 'group', 'type'], 'Raw Material'),
+            category: getRowValue(row, ['itemCategory', 'category', 'group', 'type'], 'Raw Material'),
+            itemType: getRowValue(row, ['itemType', 'type'], 'Stock Item'),
+            type: getRowValue(row, ['itemType', 'type'], 'Stock Item'),
+            uom: getRowValue(row, ['uom', 'unit', 'measure'], 'Kg'),
+            warehouse: getRowValue(row, ['warehouse', 'location', 'store'], warehouses[0]?.name || 'Main Warehouse'),
+            batchTracking: getRowValue(row, ['batchTracking', 'batch']).toLowerCase().startsWith('y') ? 'Yes' : 'No',
+            serialTracking: getRowValue(row, ['serialTracking', 'serial']).toLowerCase().startsWith('y') ? 'Yes' : 'No',
+            status: getRowValue(row, ['status'], 'Active')
           });
           successCount++;
+        } else {
+          skippedCount++;
         }
       } else if (activeTab === 'departments') {
-        if (row.name) {
-          await addDepartment({ name: row.name, head: row.head || '', plantId: row.plantId || 'Plant-1' });
+        const name = getRowValue(row, ['name', 'department', 'dept', 'departmentname']);
+        if (name) {
+          await addDepartment({
+            name,
+            head: getRowValue(row, ['head', 'headofdepartment', 'manager', 'lead']),
+            plantId: getRowValue(row, ['plantId', 'plant', 'plantname'], 'Plant-1')
+          });
           successCount++;
+        } else {
+          skippedCount++;
         }
       } else if (activeTab === 'warehouses') {
-        if (row.name) {
-          await addWarehouse({ name: row.name, type: row.type || 'Warehouse' });
+        const name = getRowValue(row, ['name', 'warehouse', 'store', 'location', 'godown']);
+        if (name) {
+          await addWarehouse({
+            name,
+            type: getRowValue(row, ['type', 'warehousetype'], 'Warehouse')
+          });
           successCount++;
+        } else {
+          skippedCount++;
         }
       }
     }
-    alert(`Bulk upload completed! ${successCount} record(s) processed.`);
+    alert(`Bulk upload completed for ${activeTab.toUpperCase()}!\n- Successfully processed: ${successCount} record(s).\n${skippedCount > 0 ? `- Skipped: ${skippedCount} row(s) (missing Name field).` : ''}`);
   };
 
   return (
@@ -130,7 +181,11 @@ export default function Masters() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <CSVUploader onUpload={handleBulkUpload} />
+          <CSVUploader 
+            onUpload={handleBulkUpload} 
+            label={`Import ${activeTab === 'items' ? 'Items' : activeTab === 'departments' ? 'Departments' : 'Warehouses'} CSV`}
+            sampleTemplate={sampleMastersCsvTemplate}
+          />
           <button 
             onClick={() => { 
               setEditItem(null);

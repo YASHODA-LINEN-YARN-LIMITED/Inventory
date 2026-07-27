@@ -6,11 +6,20 @@ import {
   MoreVertical, Calendar, RotateCcw, Scan, Printer, AlertTriangle, Eye, CheckSquare, Square,
   Building2, ShoppingCart
 } from 'lucide-react';
-import { CSVUploader } from '../components/CSVUploader';
+import { CSVUploader, getRowValue } from '../components/CSVUploader';
 import { BarcodeScannerModal } from '../components/BarcodeScannerModal';
 import { PrintGatePassModal } from '../components/PrintGatePassModal';
 import { GateEntry } from '../types';
 import { parseDateToYYYYMMDD } from '../lib/utils';
+
+const sampleGateCsvTemplate = {
+  filename: 'gate_register_sample_template.csv',
+  headers: ['SL', 'Date', 'Vehicle No.', 'Party Name', 'GST No.', 'Material Description', 'Quantity', 'UOM', 'Base Price', 'Total Price', 'Invoice No./Value', 'e-Way Bill'],
+  sampleRows: [
+    ['1', '2026-07-27', 'MH-12-AB-1234', 'Shree Cotton Mills', '27AAAAA1234A1Z5', 'Flax Fiber Raw Material', '500', 'Kgs', '120000', '141600', 'INV-9821', 'EWB-882193'],
+    ['2', '2026-07-27', 'GJ-05-CD-5678', 'Gujarat Linen Yarns', '24BBBBB5678B1Z2', 'Linen Yarn 40s Count', '1200', 'Kgs', '350000', '413000', 'INV-1042', 'EWB-991042']
+  ]
+};
 
 export default function GateRegister() {
   const { items = [], pos = [], suppliers = [], gateEntriesYashoda = [], gateEntriesAIPL = [], addGateEntry, updateGateEntry, deleteGateEntry, clearAllGateEntries } = useApp();
@@ -25,34 +34,84 @@ export default function GateRegister() {
   const [printEntry, setPrintEntry] = useState<GateEntry | null>(null);
   const [isPrintOpen, setIsPrintOpen] = useState(false);
   const [poNumber, setPoNumber] = useState('');
+
   const handleBulkUpload = async (data: any[]) => {
-    for (const row of data) {
-      const entry: Omit<GateEntry, 'id'> = {
-        slNo: row.slNo || String(Date.now()),
-        date: row.date || new Date().toISOString().split('T')[0],
-        vehicleNo: row.vehicleNo || '',
-        partyName: row.partyName || '',
-        gstNo: row.gstNo || row['GST No.'] || '',
-        materialDescription: row.materialDescription || row['Material Description'] || '',
-        quantityWeight: row.quantityWeight || row['Quantity'] || '',
-        unit: row.unit || row['UOM'] || 'Kgs',
-        rateUom: row.rateUom || row['RATE/UOM'] || '',
-        basePrice: row.basePrice || row['Base Price'] || '',
-        sgst: row.sgst || row['SGST'] || '',
-        cgst: row.cgst || row['CGST'] || '',
-        igst: row.igst || row['IGST'] || '',
-        totalPrice: row.totalPrice || row['Total Price'] || '',
-        ewayBill: row.ewayBill || row['e-Way Bill'] || '',
-        invoiceNoValue: row.invoiceNoValue || row['Invoice No./Value'] || '',
-        inTime: row.inTime || row['In Time'] || '',
-        outTime: row.outTime || row['Out Time'] || '',
-        driverLicenceNo: row.driverLicenceNo || row['Driver Licence No.'] || '',
-        contactNoSign: row.contactNoSign || row['Contact No./Sign.'] || '',
-        securitySign: row.securitySign || row['Security Sign.'] || ''
-      };
-      await addGateEntry(entry, companyType);
+    if (!data || data.length === 0) {
+      alert("No data found in uploaded CSV file.");
+      return;
     }
-    alert(`Bulk upload completed for ${companyType === 'Yashoda' ? 'Yashoda' : 'Contractor AIPL'}`);
+
+    let successCount = 0;
+    let currentSlNo = (companyType === 'Yashoda' ? gateEntriesYashoda : gateEntriesAIPL).length;
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      if (!row) continue;
+
+      let entry: Omit<GateEntry, 'id'>;
+
+      if (Array.isArray(row)) {
+        if (row.length < 2) continue;
+        const firstCell = String(row[0] || '').toLowerCase();
+        if (firstCell.includes('sl') || firstCell.includes('sr') || firstCell.includes('date') || firstCell.includes('vehicle')) {
+          continue;
+        }
+        currentSlNo++;
+        entry = {
+          slNo: String(row[0] || currentSlNo),
+          date: String(row[1] || new Date().toISOString().split('T')[0]),
+          vehicleNo: String(row[2] || ''),
+          partyName: String(row[3] || ''),
+          gstNo: String(row[4] || ''),
+          materialDescription: String(row[5] || ''),
+          quantityWeight: String(row[6] || ''),
+          unit: String(row[7] || 'Kgs'),
+          rateUom: String(row[8] || ''),
+          basePrice: String(row[9] || ''),
+          sgst: String(row[10] || ''),
+          cgst: String(row[11] || ''),
+          igst: String(row[12] || ''),
+          totalPrice: String(row[13] || ''),
+          ewayBill: String(row[14] || ''),
+          invoiceNoValue: String(row[15] || ''),
+          inTime: String(row[16] || ''),
+          outTime: String(row[17] || ''),
+          driverLicenceNo: String(row[18] || ''),
+          contactNoSign: String(row[19] || ''),
+          securitySign: String(row[20] || '')
+        };
+      } else {
+        currentSlNo++;
+        entry = {
+          slNo: getRowValue(row, ['slNo', 'sl', 'srno', 'sno', 'serial', 'id'], String(currentSlNo)),
+          date: getRowValue(row, ['date', 'entrydate', 'inwarddate'], new Date().toISOString().split('T')[0]),
+          vehicleNo: getRowValue(row, ['vehicleNo', 'vehicle', 'vehiclenumber', 'truckno', 'truck']),
+          partyName: getRowValue(row, ['partyName', 'party', 'supplier', 'vendor', 'partyname']),
+          gstNo: getRowValue(row, ['gstNo', 'gst', 'gstin', 'gstnumber']),
+          materialDescription: getRowValue(row, ['materialDescription', 'material', 'item', 'itemName', 'description', 'particulars', 'goods', 'product']),
+          quantityWeight: getRowValue(row, ['quantityWeight', 'quantity', 'qty', 'weight', 'weightqty', 'count']),
+          unit: getRowValue(row, ['unit', 'uom', 'unitofmeasure', 'measure'], 'Kgs'),
+          rateUom: getRowValue(row, ['rateUom', 'rate', 'priceperunit']),
+          basePrice: getRowValue(row, ['basePrice', 'baseamount', 'price', 'rate', 'cost', 'base']),
+          sgst: getRowValue(row, ['sgst']),
+          cgst: getRowValue(row, ['cgst']),
+          igst: getRowValue(row, ['igst']),
+          totalPrice: getRowValue(row, ['totalPrice', 'total', 'totalamount', 'netamount', 'grossamount']),
+          ewayBill: getRowValue(row, ['ewayBill', 'eway', 'ewaybillno', 'ebill']),
+          invoiceNoValue: getRowValue(row, ['invoiceNoValue', 'invoiceno', 'invoice', 'billno', 'invno']),
+          inTime: getRowValue(row, ['inTime', 'intime', 'timein']),
+          outTime: getRowValue(row, ['outTime', 'outtime', 'timeout']),
+          driverLicenceNo: getRowValue(row, ['driverLicenceNo', 'driverdl', 'dlno', 'driverlicence']),
+          contactNoSign: getRowValue(row, ['contactNoSign', 'contactno', 'phone', 'mobile']),
+          securitySign: getRowValue(row, ['securitySign', 'security'])
+        };
+      }
+
+      await addGateEntry(entry, companyType);
+      successCount++;
+    }
+
+    alert(`CSV Import Completed Successfully!\n- Total ${successCount} Gate Entry record(s) imported into ${companyType === 'Yashoda' ? 'Yashoda Store Table' : 'Contractor AIPL Store Table'}.`);
   };
   // Unique material descriptions from previous entries and items
   const uniqueMaterialDescriptions = useMemo(() => {
@@ -381,18 +440,11 @@ export default function GateRegister() {
           >
             <Scan className="w-4 h-4" /> Barcode / QR Scan
           </button>
-          <div className="relative overflow-hidden inline-block">
-            <input 
-              type="file" 
-              accept=".csv" 
-              onChange={handleImport} 
-              className="absolute inset-0 opacity-0 cursor-pointer" 
-              title="Import CSV"
-            />
-            <button className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-gray-700 dark:text-gray-300 px-3 py-2 rounded-lg flex items-center gap-1.5 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors text-sm font-medium">
-              <Download className="w-4 h-4 rotate-180" /> Import CSV
-            </button>
-          </div>
+          <CSVUploader 
+            onUpload={handleBulkUpload} 
+            sampleTemplate={sampleGateCsvTemplate} 
+            label="Import CSV" 
+          />
           <button onClick={handleExport} className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-gray-700 dark:text-gray-300 px-3 py-2 rounded-lg flex items-center gap-1.5 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors text-sm font-medium">
             <Download className="w-4 h-4" /> Export CSV
           </button>
