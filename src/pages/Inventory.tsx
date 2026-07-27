@@ -1584,6 +1584,8 @@ function ItemModal({ type, initialData, onClose, onSave }: { type: 'item' | 'ite
                   <option value="Nos">Nos</option>
                   <option value="Ltr">Ltr</option>
                   <option value="Mtr">Mtr</option>
+                  <option value="Sq Mtr">Sq Mtr (Square metre)</option>
+                  <option value="Sq Ft">Sq Ft (Square feet)</option>
                   <option value="Roll">Roll</option>
                   <option value="Bag">Bag</option>
                   <option value="Box">Box</option>
@@ -1591,6 +1593,7 @@ function ItemModal({ type, initialData, onClose, onSave }: { type: 'item' | 'ite
                   <option value="Pair">Pair</option>
                   <option value="Drum">Drum</option>
                   <option value="TON">TON</option>
+                  <option value="Bale">Bale</option>
                   <option value="Quintal">Quintal</option>
                 </select>
               </div>

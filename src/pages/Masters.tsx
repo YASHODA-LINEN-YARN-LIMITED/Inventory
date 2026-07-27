@@ -775,6 +775,8 @@ function MasterModal({
                     <option value="Nos">Nos</option>
                     <option value="Ltr">Ltr</option>
                     <option value="Mtr">Mtr</option>
+                    <option value="Sq Mtr">Sq Mtr (Square metre)</option>
+                    <option value="Sq Ft">Sq Ft (Square feet)</option>
                     <option value="Roll">Roll</option>
                     <option value="Bag">Bag</option>
                     <option value="Box">Box</option>
@@ -782,6 +784,7 @@ function MasterModal({
                     <option value="Pair">Pair</option>
                     <option value="Drum">Drum</option>
                     <option value="Ton">Ton</option>
+                    <option value="Bale">Bale</option>
                   </select>
                 </div>
 

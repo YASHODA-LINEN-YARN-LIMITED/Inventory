@@ -392,6 +392,8 @@ export default function MaterialIssue() {
                       <option value="Quintal">Quintal</option>
                       <option value="Grams">Grams</option>
                       <option value="Mtrs">Mtrs</option>
+                      <option value="Sq Mtr">Sq Mtr (Square metre)</option>
+                      <option value="Sq Ft">Sq Ft (Square feet)</option>
                       <option value="Pcs">Pcs</option>
                       <option value="Bags">Bags</option>
                       <option value="Nos">Nos</option>
@@ -968,6 +970,8 @@ export default function MaterialIssue() {
                       <option value="Quintal">Quintal</option>
                       <option value="Grams">Grams</option>
                       <option value="Mtrs">Mtrs</option>
+                      <option value="Sq Mtr">Sq Mtr (Square metre)</option>
+                      <option value="Sq Ft">Sq Ft (Square feet)</option>
                       <option value="Pcs">Pcs</option>
                       <option value="Bags">Bags</option>
                       <option value="Nos">Nos</option>

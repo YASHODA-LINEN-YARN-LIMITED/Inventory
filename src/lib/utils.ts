@@ -50,6 +50,23 @@ export function convertUnitQuantity(qty: number, fromUnit?: string, toUnit?: str
     'MM': 0.001
   };
 
+  // Area conversion factors to SQ METERS
+  const toSqMetersMap: Record<string, number> = {
+    'SQMTR': 1,
+    'SQMTRS': 1,
+    'SQM': 1,
+    'SQMETER': 1,
+    'SQMETERS': 1,
+    'SQUAREMETER': 1,
+    'SQUAREMETERS': 1,
+    'SQUAREMETRE': 1,
+    'SQUAREMETRES': 1,
+    'SQFT': 0.092903,
+    'SQFEET': 0.092903,
+    'SQUAREFEET': 0.092903,
+    'SQUAREFOOT': 0.092903
+  };
+
   if (toKgsMap[cleanFrom] !== undefined && toKgsMap[cleanTo] !== undefined) {
     const qtyInKgs = qty * toKgsMap[cleanFrom];
     return qtyInKgs / toKgsMap[cleanTo];
@@ -58,6 +75,11 @@ export function convertUnitQuantity(qty: number, fromUnit?: string, toUnit?: str
   if (toMetersMap[cleanFrom] !== undefined && toMetersMap[cleanTo] !== undefined) {
     const qtyInMeters = qty * toMetersMap[cleanFrom];
     return qtyInMeters / toMetersMap[cleanTo];
+  }
+
+  if (toSqMetersMap[cleanFrom] !== undefined && toSqMetersMap[cleanTo] !== undefined) {
+    const qtyInSqMeters = qty * toSqMetersMap[cleanFrom];
+    return qtyInSqMeters / toSqMetersMap[cleanTo];
   }
 
   return qty;

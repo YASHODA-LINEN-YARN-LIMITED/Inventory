@@ -735,13 +735,16 @@ export default function GateRegister() {
                   <label className="block text-sm font-medium mb-1">Quantity</label>
                   <div className="flex gap-2">
                     <input required type="text" value={formData.quantityWeight} onChange={e => setFormData({...formData, quantityWeight: e.target.value})} className="flex-1 p-2 border rounded dark:bg-zinc-800 dark:border-zinc-700" />
-                    <select value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})} className="w-24 p-2 border rounded dark:bg-zinc-800 dark:border-zinc-700">
+                    <select value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})} className="w-32 p-2 border rounded dark:bg-zinc-800 dark:border-zinc-700 text-xs font-semibold">
                       <option value="Kgs">Kgs</option>
                       <option value="Pcs">Pcs</option>
                       <option value="Box">Box</option>
                       <option value="Ltr">Ltr</option>
                       <option value="Ton">Ton</option>
                       <option value="Bale">Bale</option>
+                      <option value="Mtr">Mtr</option>
+                      <option value="Sq Mtr">Sq Mtr (Square metre)</option>
+                      <option value="Sq Ft">Sq Ft (Square feet)</option>
                     </select>
                   </div>
                 </div>

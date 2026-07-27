@@ -16,6 +16,8 @@ const CONVERSION_RATES: Record<string, number> = {
   METRES: 1,
   YARDS: 0.9144,
   FEET: 0.3048,
+  SQ_METRES: 1,
+  SQ_FEET: 0.092903,
   LITRES: 1
 };
 
@@ -108,6 +110,10 @@ export function UnitConverterModal({ isOpen, onClose }: UnitConverterModalProps)
               <div className="p-2.5 bg-gray-50 dark:bg-zinc-800/80 rounded-xl border border-gray-100 dark:border-zinc-800 flex justify-between">
                 <span className="text-gray-500">1 QUINTAL</span>
                 <span className="font-bold text-gray-800 dark:text-gray-200">100 KGs</span>
+              </div>
+              <div className="p-2.5 bg-gray-50 dark:bg-zinc-800/80 rounded-xl border border-gray-100 dark:border-zinc-800 flex justify-between">
+                <span className="text-gray-500">1 SQ METRE</span>
+                <span className="font-bold text-gray-800 dark:text-gray-200">10.764 SQ FEET</span>
               </div>
               <div className="p-2.5 bg-gray-50 dark:bg-zinc-800/80 rounded-xl border border-gray-100 dark:border-zinc-800 flex justify-between">
                 <span className="text-gray-500">1 COTTON BALE</span>
