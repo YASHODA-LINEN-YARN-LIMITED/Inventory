@@ -80,13 +80,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   
   
   const initApp = async () => {
+    let currentUser = null;
     const storedUser = localStorage.getItem('yashodaUser');
     if (storedUser) {
-      setState(s => ({ ...s, user: JSON.parse(storedUser), isSyncing: false }));
-      setupListeners();
+      try {
+        currentUser = JSON.parse(storedUser);
+      } catch (e) {
+        currentUser = { displayName: 'Admin', email: 'admin@yashodagroup.in', uid: 'admin-1' };
+      }
     } else {
-      setState(s => ({ ...s, isSyncing: false }));
+      currentUser = { displayName: 'Admin User', email: 'admin@yashodagroup.in', uid: 'admin-1' };
+      localStorage.setItem('yashodaUser', JSON.stringify(currentUser));
     }
+
+    setState(s => ({ ...s, user: currentUser as any, isSyncing: false }));
+    setupListeners();
   };
 
   const setupListeners = () => {
@@ -156,6 +164,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const firestoreAdd = async (coll: string, data: any) => {
     const newId = Date.now().toString() + Math.random().toString(36).substring(7);
     const itemData = { ...data, id: newId };
+    
+    // Optimistic local state update
+    if (coll in state) {
+      setState(s => ({
+        ...s,
+        [coll]: [itemData, ...(s[coll as keyof AppState] as any[] || [])]
+      }));
+    }
+
     try {
       await setDoc(doc(db, coll, newId), itemData);
     } catch (e) {
@@ -164,6 +181,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const firestoreUpdate = async (coll: string, id: string, data: any) => {
+    if (coll in state) {
+      setState(s => ({
+        ...s,
+        [coll]: ((s[coll as keyof AppState] as any[]) || []).map(item => item.id === id ? { ...item, ...data } : item)
+      }));
+    }
+
     try {
       await updateDoc(doc(db, coll, id), data);
     } catch (e) {
@@ -172,6 +196,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const firestoreDelete = async (coll: string, id: string) => {
+    if (coll in state) {
+      setState(s => ({
+        ...s,
+        [coll]: ((s[coll as keyof AppState] as any[]) || []).filter(item => item.id !== id)
+      }));
+    }
+
     try {
       await deleteDoc(doc(db, coll, id));
     } catch (e) {
@@ -211,17 +242,75 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const updateWarehouse = async (id: string, data: Partial<Warehouse>) => firestoreUpdate('warehouses', id, data);
   const deleteWarehouse = async (id: string) => firestoreDelete('warehouses', id);
   const addSupplier = async (sup: Omit<Supplier, 'id'>) => firestoreAdd('suppliers', sup);
-    const addGateEntry = async (entry: Omit<GateEntry, 'id'>, type: 'Yashoda' | 'AIPL') => firestoreAdd(type === 'Yashoda' ? 'GateEntries_Yashoda' : 'GateEntries_AIPL', entry);
-  const updateGateEntry = async (id: string, data: Partial<GateEntry>, type: 'Yashoda' | 'AIPL') => firestoreUpdate(type === 'Yashoda' ? 'GateEntries_Yashoda' : 'GateEntries_AIPL', id, data);
-  const deleteGateEntry = async (id: string, type: 'Yashoda' | 'AIPL') => firestoreDelete(type === 'Yashoda' ? 'GateEntries_Yashoda' : 'GateEntries_AIPL', id);
+    const addGateEntry = async (entry: Omit<GateEntry, 'id'>, type: 'Yashoda' | 'AIPL') => {
+    const collName = type === 'Yashoda' ? 'GateEntries_Yashoda' : 'GateEntries_AIPL';
+    const stateKey = type === 'Yashoda' ? 'gateEntriesYashoda' : 'gateEntriesAIPL';
+    const newId = Date.now().toString() + Math.random().toString(36).substring(7);
+    const itemData = { ...entry, id: newId };
+
+    setState(s => ({
+      ...s,
+      [stateKey]: [itemData, ...(s[stateKey] || [])]
+    }));
+
+    try {
+      await setDoc(doc(db, collName, newId), itemData);
+    } catch (e) {
+      handleFirestoreError(e, OperationType.CREATE, collName);
+    }
+  };
+
+  const updateGateEntry = async (id: string, data: Partial<GateEntry>, type: 'Yashoda' | 'AIPL') => {
+    const collName = type === 'Yashoda' ? 'GateEntries_Yashoda' : 'GateEntries_AIPL';
+    const stateKey = type === 'Yashoda' ? 'gateEntriesYashoda' : 'gateEntriesAIPL';
+
+    setState(s => ({
+      ...s,
+      [stateKey]: (s[stateKey] || []).map(item => item.id === id ? { ...item, ...data } : item)
+    }));
+
+    try {
+      await updateDoc(doc(db, collName, id), data);
+    } catch (e) {
+      handleFirestoreError(e, OperationType.UPDATE, collName);
+    }
+  };
+
+  const deleteGateEntry = async (id: string, type: 'Yashoda' | 'AIPL') => {
+    const collName = type === 'Yashoda' ? 'GateEntries_Yashoda' : 'GateEntries_AIPL';
+    const stateKey = type === 'Yashoda' ? 'gateEntriesYashoda' : 'gateEntriesAIPL';
+
+    setState(s => ({
+      ...s,
+      [stateKey]: (s[stateKey] || []).filter(item => item.id !== id)
+    }));
+
+    try {
+      await deleteDoc(doc(db, collName, id));
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, collName);
+    }
+  };
+
   const clearAllGateEntries = async (type: 'Yashoda' | 'AIPL') => {
-    const coll = type === 'Yashoda' ? 'GateEntries_Yashoda' : 'GateEntries_AIPL';
-    const querySnapshot = await getDocs(collection(db, coll));
-    const batch = writeBatch(db);
-    querySnapshot.forEach((docSnap) => {
-      batch.delete(doc(db, coll, docSnap.id));
-    });
-    await batch.commit();
+    const collName = type === 'Yashoda' ? 'GateEntries_Yashoda' : 'GateEntries_AIPL';
+    const stateKey = type === 'Yashoda' ? 'gateEntriesYashoda' : 'gateEntriesAIPL';
+
+    setState(s => ({
+      ...s,
+      [stateKey]: []
+    }));
+
+    try {
+      const querySnapshot = await getDocs(collection(db, collName));
+      const batch = writeBatch(db);
+      querySnapshot.forEach((docSnap) => {
+        batch.delete(doc(db, collName, docSnap.id));
+      });
+      await batch.commit();
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, collName);
+    }
   };
   const addPR = async (pr: Omit<PurchaseRequisition, 'id'>) => firestoreAdd('prs', pr);
   const addPO = async (po: Omit<PurchaseOrder, 'id'>) => firestoreAdd('pos', po);

@@ -15,16 +15,39 @@ function parseNumeric(val: string | number | undefined): number {
 
 function parseEntryDate(dateStr: string | undefined): Date | null {
   if (!dateStr) return null;
-  const d = new Date(dateStr);
+  const str = String(dateStr).trim();
+  if (!str) return null;
+
+  // Standard JS parse (handles YYYY-MM-DD, ISO, etc.)
+  const d = new Date(str);
   if (!isNaN(d.getTime())) return d;
+
+  // Split by common delimiters
+  const cleanStr = str.split(' ')[0].split('T')[0];
+  const delimiter = cleanStr.includes('/') ? '/' : cleanStr.includes('-') ? '-' : cleanStr.includes('.') ? '.' : '';
   
-  const parts = dateStr.split(' ')[0].split('/');
-  if (parts.length === 3) {
-    const day = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1;
-    const year = parseInt(parts[2], 10);
-    const parsed = new Date(year, month, day);
-    if (!isNaN(parsed.getTime())) return parsed;
+  if (delimiter) {
+    const parts = cleanStr.split(delimiter);
+    if (parts.length === 3) {
+      let p0 = parseInt(parts[0], 10);
+      let p1 = parseInt(parts[1], 10);
+      let p2 = parseInt(parts[2], 10);
+
+      if (!isNaN(p0) && !isNaN(p1) && !isNaN(p2)) {
+        // Check if first part is 4-digit year (YYYY-MM-DD)
+        if (p0 > 1000) {
+          const parsed = new Date(p0, p1 - 1, p2);
+          if (!isNaN(parsed.getTime())) return parsed;
+        } else {
+          // DD-MM-YYYY or MM-DD-YYYY
+          // If p2 is 2 digits e.g. 26 -> 2026
+          if (p2 < 100) p2 = 2000 + p2;
+          // Assume DD-MM-YYYY first
+          const parsed = new Date(p2, p1 - 1, p0);
+          if (!isNaN(parsed.getTime())) return parsed;
+        }
+      }
+    }
   }
   return null;
 }
