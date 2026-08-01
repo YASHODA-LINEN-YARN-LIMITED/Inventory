@@ -85,6 +85,7 @@ export interface GateEntry {
   cgst?: string;
   igst?: string;
   totalPrice?: string;
+  discount?: string;
   ewayBill?: string;
   invoiceNoValue: string;
   inTime: string;

@@ -110,7 +110,7 @@ export function PrintGatePassModal({ entry, companyType = 'Yashoda', isOpen, onC
               <span>Gate Timestamp & Valuation Breakdown</span>
               <span>In: {entry.inTime || 'N/A'} | Out: {entry.outTime || 'Pending'}</span>
             </div>
-            <div className="p-4 grid grid-cols-4 gap-2 text-center bg-white">
+            <div className="p-4 grid grid-cols-5 gap-2 text-center bg-white">
               <div>
                 <span className="text-gray-400 text-[10px]">Base Price</span>
                 <div className="font-bold font-mono">₹{entry.basePrice || '0.00'}</div>
@@ -122,6 +122,10 @@ export function PrintGatePassModal({ entry, companyType = 'Yashoda', isOpen, onC
               <div>
                 <span className="text-gray-400 text-[10px]">CGST / IGST</span>
                 <div className="font-bold font-mono">₹{Number(entry.cgst || 0) + Number(entry.igst || 0)}</div>
+              </div>
+              <div>
+                <span className="text-gray-400 text-[10px]">Discount</span>
+                <div className="font-bold font-mono text-rose-600">₹{entry.discount || '0.00'}</div>
               </div>
               <div className="border-l border-gray-200 pl-2">
                 <span className="text-gray-400 text-[10px]">Grand Total</span>

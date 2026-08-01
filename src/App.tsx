@@ -173,16 +173,6 @@ function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      {/* Floating Tutorial Action Launcher Button */}
-      <button
-        onClick={() => setIsTutorialOpen(true)}
-        className="fixed bottom-5 right-5 z-40 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white p-3.5 sm:px-4 sm:py-3 rounded-full shadow-2xl flex items-center gap-2 font-bold text-xs transition-transform hover:scale-105 active:scale-95 group border border-white/20"
-        title="App Video Tutorial & Operating Manual"
-      >
-        <Video className="w-5 h-5 shrink-0 animate-bounce" />
-        <span className="hidden sm:inline">Watch App Tutorial</span>
-      </button>
-
       {/* Tutorial Modal */}
       <TutorialModal 
         isOpen={isTutorialOpen}
