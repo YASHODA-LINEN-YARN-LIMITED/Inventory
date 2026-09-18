@@ -568,7 +568,7 @@ export default function GateRegister() {
                 <th className="px-4 py-3">UOM</th>
                 <th className="px-4 py-3">RATE/UOM</th>
                 <th className="px-4 py-3">Base Price</th>
-                <th className="px-4 py-3">Charge</th>
+                <th className="px-4 py-3">Freight & Forwarding Charges</th>
                 <th className="px-4 py-3">Discount</th>
                 <th className="px-4 py-3">SGST</th>
                 <th className="px-4 py-3">CGST</th>
@@ -773,7 +773,7 @@ export default function GateRegister() {
                       <input type="text" value={formData.basePrice} onChange={e => setFormData({...formData, basePrice: e.target.value})} className="w-full p-2 border rounded dark:bg-zinc-800 dark:border-zinc-700" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">Charge</label>
+                      <label className="block text-sm font-medium mb-1">Freight & Forwarding Charges</label>
                       <input type="text" value={formData.charge} onChange={e => setFormData({...formData, charge: e.target.value})} className="w-full p-2 border rounded dark:bg-zinc-800 dark:border-zinc-700" placeholder="" />
                     </div>
                     <div>
