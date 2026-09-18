@@ -14,10 +14,10 @@ import { parseDateToYYYYMMDD } from '../lib/utils';
 
 const sampleGateCsvTemplate = {
   filename: 'gate_register_sample_template.csv',
-  headers: ['SL', 'Date', 'Vehicle No.', 'Party Name', 'GST No.', 'Material Description', 'Quantity', 'UOM', 'Base Price', 'Total Price', 'Discount', 'Invoice No./Value', 'e-Way Bill'],
+  headers: ['SL', 'Date', 'Vehicle No.', 'Party Name', 'GST No.', 'Material Description', 'Quantity', 'UOM', 'Base Price', 'Charge', 'Discount','Total Price', 'Invoice No./Value', 'e-Way Bill'],
   sampleRows: [
-    ['1', '2026-07-27', 'MH-12-AB-1234', 'Shree Cotton Mills', '27AAAAA1234A1Z5', 'Flax Fiber Raw Material', '500', 'Kgs', '120000', '141600', '5000', 'INV-9821', 'EWB-882193'],
-    ['2', '2026-07-27', 'GJ-05-CD-5678', 'Gujarat Linen Yarns', '24BBBBB5678B1Z2', 'Linen Yarn 40s Count', '1200', 'Kgs', '350000', '413000', '0', 'INV-1042', 'EWB-991042']
+    ['1', '2026-07-27', 'MH-12-AB-1234', 'Shree Cotton Mills', '27AAAAA1234A1Z5', 'Flax Fiber Raw Material', '500', 'Kgs', '120000', '10', '141600', '5000', 'INV-9821', 'EWB-882193'],
+    ['2', '2026-07-27', 'GJ-05-CD-5678', 'Gujarat Linen Yarns', '24BBBBB5678B1Z2', 'Linen Yarn 40s Count', '1200', 'Kgs', '350000', '10', '413000', '0', 'INV-1042', 'EWB-991042']
   ]
 };
 
@@ -79,7 +79,8 @@ export default function GateRegister() {
           outTime: String(row[18] || ''),
           driverLicenceNo: String(row[19] || ''),
           contactNoSign: String(row[20] || ''),
-          securitySign: String(row[21] || '')
+          securitySign: String(row[21] || ''),
+          charge: String(row[22] || '')
         };
       } else {
         currentSlNo++;
@@ -105,7 +106,8 @@ export default function GateRegister() {
           outTime: getRowValue(row, ['outTime', 'outtime', 'timeout']),
           driverLicenceNo: getRowValue(row, ['driverLicenceNo', 'driverdl', 'dlno', 'driverlicence']),
           contactNoSign: getRowValue(row, ['contactNoSign', 'contactno', 'phone', 'mobile']),
-          securitySign: getRowValue(row, ['securitySign', 'security'])
+          securitySign: getRowValue(row, ['securitySign', 'security']),
+          charge: getRowValue(row, ['charge', 'crg', 'chargetamount', 'chargeval'])
         };
       }
 
@@ -162,7 +164,8 @@ export default function GateRegister() {
     invoiceNoValue: '',
     driverLicenceNo: '',
     contactNoSign: '',
-    securitySign: ''
+    securitySign: '',
+    charge:''
   });
 
   const allEntries = useMemo(() => [
@@ -303,7 +306,8 @@ export default function GateRegister() {
                 outTime: row[18] || '',
                 driverLicenceNo: row[19] || '',
                 contactNoSign: row[20] || '',
-                securitySign: row[21] || ''
+                securitySign: row[21] || '',
+                charge: row[22] || ''
               };
               await addGateEntry(entry as any, companyType);
             }
@@ -346,7 +350,8 @@ export default function GateRegister() {
       invoiceNoValue: entry.invoiceNoValue || '',
       driverLicenceNo: entry.driverLicenceNo || '',
       contactNoSign: entry.contactNoSign || '',
-      securitySign: entry.securitySign || ''
+      securitySign: entry.securitySign || '',
+      charge: entry.charge || ''
     });
     setEditId(entry.id);
     setIsModalOpen(true);
@@ -359,9 +364,9 @@ export default function GateRegister() {
   };
 
   const handleExport = () => {
-    const headers = ['SL', 'Date', 'Vehicle No.', 'Party Name', 'GST No.', 'Material Description', 'Quantity', 'UOM', 'RATE/UOM', 'Base Price', 'SGST', 'CGST', 'IGST', 'Total Price', 'Discount', 'e-Way Bill', 'Invoice No./Value', 'In Time', 'Out Time', 'Driver Licence No.', 'Contact No./Sign.', 'Security Sign.'];
+    const headers = ['SL', 'Date', 'Vehicle No.', 'Party Name', 'GST No.', 'Material Description', 'Quantity', 'UOM', 'RATE/UOM', 'Base Price', 'SGST', 'CGST', 'IGST', 'Total Price', 'Discount', 'e-Way Bill', 'Invoice No./Value', 'In Time', 'Out Time', 'Driver Licence No.', 'Contact No./Sign.', 'Security Sign.','Charge'];
     const csvContent = "data:text/csv;charset=utf-8," + headers.join(',') + '\n' + filteredEntries.map(e => 
-      `"${e.slNo}","${e.date}","${e.vehicleNo}","${e.partyName}","${e.gstNo}","${e.materialDescription}","${e.quantityWeight}","${e.unit}","${e.rateUom}","${e.basePrice}","${e.sgst}","${e.cgst}","${e.igst}","${e.totalPrice}","${e.discount || ''}","${e.ewayBill}","${e.invoiceNoValue}","${e.inTime}","${e.outTime}","${e.driverLicenceNo}","${e.contactNoSign}","${e.securitySign}"`
+      `"${e.slNo}","${e.date}","${e.vehicleNo}","${e.partyName}","${e.gstNo}","${e.materialDescription}","${e.quantityWeight}","${e.unit}","${e.rateUom}","${e.basePrice}","${e.sgst}","${e.cgst}","${e.igst}","${e.totalPrice}","${e.discount || ''}","${e.ewayBill}","${e.invoiceNoValue}","${e.inTime}","${e.outTime}","${e.driverLicenceNo}","${e.contactNoSign}","${e.securitySign}","${e.charge}"`
     ).join('\n');
 
     const encodedUri = encodeURI(csvContent);
@@ -405,7 +410,8 @@ export default function GateRegister() {
         invoiceNoValue: '',
         driverLicenceNo: '',
         contactNoSign: '',
-        securitySign: ''
+        securitySign: '',
+        charge:''
       });
     } catch (err) {
       console.error('Failed to sync to Google Sheets', err);
@@ -562,11 +568,12 @@ export default function GateRegister() {
                 <th className="px-4 py-3">UOM</th>
                 <th className="px-4 py-3">RATE/UOM</th>
                 <th className="px-4 py-3">Base Price</th>
+                <th className="px-4 py-3">Charge</th>
+                <th className="px-4 py-3">Discount</th>
                 <th className="px-4 py-3">SGST</th>
                 <th className="px-4 py-3">CGST</th>
                 <th className="px-4 py-3">IGST</th>
                 <th className="px-4 py-3">Total Price</th>
-                <th className="px-4 py-3">Discount</th>
                 <th className="px-4 py-3">e-Way Bill</th>
                 <th className="px-4 py-3">Invoice No./Value</th>
                 <th className="px-4 py-3">In Time</th>
@@ -600,11 +607,12 @@ export default function GateRegister() {
                     <td className="px-4 py-3 text-xs">{entry.unit || '-'}</td>
                     <td className="px-4 py-3 font-mono">{entry.rateUom || '-'}</td>
                     <td className="px-4 py-3 font-mono">{entry.basePrice || '-'}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-rose-600 dark:text-rose-400 font-semibold">{entry.charge || '-'}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-rose-600 dark:text-rose-400 font-semibold">{entry.discount || '-'}</td>
                     <td className="px-4 py-3 font-mono text-xs">{entry.sgst || '-'}</td>
                     <td className="px-4 py-3 font-mono text-xs">{entry.cgst || '-'}</td>
                     <td className="px-4 py-3 font-mono text-xs">{entry.igst || '-'}</td>
                     <td className="px-4 py-3 font-extrabold font-mono text-gray-900 dark:text-white">{entry.totalPrice || '-'}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-rose-600 dark:text-rose-400 font-semibold">{entry.discount || '-'}</td>
                     <td className="px-4 py-3 font-mono text-xs">{entry.ewayBill || '-'}</td>
                     <td className="px-4 py-3 font-mono text-xs">{entry.invoiceNoValue || '-'}</td>
                     <td className="px-4 py-3 text-xs">{entry.inTime || '-'}</td>
@@ -765,6 +773,14 @@ export default function GateRegister() {
                       <input type="text" value={formData.basePrice} onChange={e => setFormData({...formData, basePrice: e.target.value})} className="w-full p-2 border rounded dark:bg-zinc-800 dark:border-zinc-700" />
                     </div>
                     <div>
+                      <label className="block text-sm font-medium mb-1">Charge</label>
+                      <input type="text" value={formData.charge} onChange={e => setFormData({...formData, charge: e.target.value})} className="w-full p-2 border rounded dark:bg-zinc-800 dark:border-zinc-700" placeholder="" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Discount</label>
+                      <input type="text" value={formData.discount} onChange={e => setFormData({...formData, discount: e.target.value})} className="w-full p-2 border rounded dark:bg-zinc-800 dark:border-zinc-700" placeholder="e.g. 500 or 5%" />
+                    </div>
+                    <div>
                       <label className="block text-sm font-medium mb-1">SGST</label>
                       <input type="text" value={formData.sgst} onChange={e => setFormData({...formData, sgst: e.target.value})} className="w-full p-2 border rounded dark:bg-zinc-800 dark:border-zinc-700" />
                     </div>
@@ -780,10 +796,7 @@ export default function GateRegister() {
                       <label className="block text-sm font-medium mb-1">Total Price</label>
                       <input type="text" value={formData.totalPrice} onChange={e => setFormData({...formData, totalPrice: e.target.value})} className="w-full p-2 border rounded dark:bg-zinc-800 dark:border-zinc-700" />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Discount</label>
-                      <input type="text" value={formData.discount} onChange={e => setFormData({...formData, discount: e.target.value})} className="w-full p-2 border rounded dark:bg-zinc-800 dark:border-zinc-700" placeholder="e.g. 500 or 5%" />
-                    </div>
+                    
                     <div>
                       <label className="block text-sm font-medium mb-1">e-Way Bill</label>
                       <input type="text" value={formData.ewayBill} onChange={e => setFormData({...formData, ewayBill: e.target.value})} className="w-full p-2 border rounded dark:bg-zinc-800 dark:border-zinc-700" />
